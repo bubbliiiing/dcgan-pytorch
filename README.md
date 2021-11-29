@@ -14,7 +14,7 @@ keras==2.1.5
 
 ## 文件下载
 为了验证模型的有效性，我使用了**花的例子**进行了训练。    
-训练好的生成器与判别器模型[Generator_Flower.h5](https://github.com/bubbliiiing/dcgan-pytorch/releases/download/v1.0/Generator_Flower.pth)、[Discriminator_Flower.h5](https://github.com/bubbliiiing/dcgan-pytorch/releases/download/v1.0/Discriminator_Flower.pth)可以通过百度网盘下载或者通过GITHUB下载    
+训练好的生成器与判别器模型[Generator_Flower.pth](https://github.com/bubbliiiing/dcgan-pytorch/releases/download/v1.0/Generator_Flower.pth)、[Discriminator_Flower.pth](https://github.com/bubbliiiing/dcgan-pytorch/releases/download/v1.0/Discriminator_Flower.pth)可以通过百度网盘下载或者通过GITHUB下载    
 权值的百度网盘地址如下：    
 链接: https://pan.baidu.com/s/1AMh52TauVT7nyn874BCAgg 提取码: dubv  
 
