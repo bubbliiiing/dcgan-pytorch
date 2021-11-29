@@ -1,4 +1,4 @@
-## DCGAN：Deep Convolutional Generative Adversarial Networks模型在Keras当中的实现
+## DCGAN：Deep Convolutional Generative Adversarial Networks模型在pytorch当中的实现
 ---
 
 ### 目录
@@ -9,8 +9,7 @@
 6. [参考资料 Reference](#Reference)
 
 ## 所需环境
-tensorflow-gpu==1.13.1    
-keras==2.1.5    
+pytorch==1.2.0    
 
 ## 文件下载
 为了验证模型的有效性，我使用了**花的例子**进行了训练。    
