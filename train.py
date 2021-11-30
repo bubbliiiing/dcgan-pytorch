@@ -98,6 +98,10 @@ if __name__ == "__main__":
     #   Epoch总训练世代
     #------------------------------------------------------#
     if True:
+        epoch_step      = num_train // batch_size
+        if epoch_step == 0:
+            raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
+            
         #------------------------------#
         #   Adam optimizer
         #------------------------------#
@@ -109,10 +113,6 @@ if __name__ == "__main__":
         train_dataset   = DCganDataset(lines, input_shape)
         gen             = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, num_workers=4, pin_memory=True,
                                             drop_last=True, collate_fn=DCgan_dataset_collate)
-
-        epoch_step      = num_train // batch_size
-        if epoch_step == 0:
-            raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
 
         for epoch in range(Init_epoch, Epoch):
             fit_one_epoch(G_model_train, D_model_train, G_model, D_model, G_optimizer, D_optimizer, BCE_loss, 
