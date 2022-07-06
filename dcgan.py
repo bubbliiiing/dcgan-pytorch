@@ -7,6 +7,7 @@ from PIL import Image
 from torch import nn
 
 from nets.dcgan import generator
+from utils.utils import postprocess_output, show_config
 
 
 class DCGAN(object):
@@ -37,7 +38,10 @@ class DCGAN(object):
         self.__dict__.update(self._defaults)
         for name, value in kwargs.items():
             setattr(self, name, value)  
+            setattr(self._defaults, name, value)  
         self.generate()
+
+        show_config(**self._defaults)
 
     def generate(self):
         #----------------------------------------#
@@ -75,7 +79,7 @@ class DCGAN(object):
                 i = k // 5
                 j = k % 5
                 ax[i, j].cla()
-                ax[i, j].imshow(test_images[k].cpu().data.numpy().transpose(1, 2, 0) * 0.5 + 0.5)
+                ax[i, j].imshow(np.uint8(postprocess_output(test_images[k].cpu().data.numpy().transpose(1, 2, 0))))
 
             label = 'predict_5x5_results'
             fig.text(0.5, 0.04, label, ha='center')
@@ -91,7 +95,7 @@ class DCGAN(object):
                 randn_in = randn_in.cuda()
 
             test_images = self.net(randn_in)
-            test_images = (test_images[0].cpu().data.numpy().transpose(1, 2, 0) * 0.5 + 0.5) * 255
+            test_images = postprocess_output(test_images[0].cpu().data.numpy().transpose(1, 2, 0))
 
             Image.fromarray(np.uint8(test_images)).save(save_path)
 
