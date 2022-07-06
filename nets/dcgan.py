@@ -32,6 +32,7 @@ class generator(nn.Module):
         self.deconv4    = nn.ConvTranspose2d(d, 3, 4, 2, 1)
 
         self.relu       = nn.ReLU()
+        self.weight_init()
 
     def weight_init(self):
         for m in self.modules():
@@ -84,7 +85,7 @@ class discriminator(nn.Module):
         self.linear     = nn.Linear(self.s_h16 * self.s_w16 * d * 8, 1)
 
         self.leaky_relu = nn.LeakyReLU(negative_slope=0.2)
-        self.sigmoid    = nn.Sigmoid()
+        self.weight_init()
 
     def weight_init(self):
         for m in self.modules():
@@ -103,8 +104,8 @@ class discriminator(nn.Module):
         x = self.leaky_relu(self.conv2_bn(self.conv2(x)))
         x = self.leaky_relu(self.conv3_bn(self.conv3(x)))
         x = self.leaky_relu(self.conv4_bn(self.conv4(x)))
-        x = x.view([bs,-1])
-        x = self.sigmoid(self.linear(x))
+        x = x.view([bs, -1])
+        x = self.linear(x)
 
         return x.squeeze()
 
