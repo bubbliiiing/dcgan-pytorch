@@ -1,6 +1,7 @@
 import os
 
 import torch
+import torch.distributed as dist
 from tqdm import tqdm
 
 from utils.utils import get_lr, show_result
@@ -21,10 +22,12 @@ def fit_one_epoch(G_model_train, D_model_train, G_model, D_model, loss_history, 
         batch_size  = images.size()[0]
         y_real      = torch.ones(batch_size)
         y_fake      = torch.zeros(batch_size)
+        noise_1     = torch.randn((batch_size, 100))
+        noise_2     = torch.randn((batch_size, 100))
 
         with torch.no_grad():
             if cuda:
-                images, y_real, y_fake  = images.cuda(local_rank), y_real.cuda(local_rank), y_fake.cuda(local_rank)
+                images, y_real, y_fake, noise_1, noise_2 = images.cuda(local_rank), y_real.cuda(local_rank), y_fake.cuda(local_rank), noise_1.cuda(local_rank), noise_2.cuda(local_rank)
             
         if not fp16:
             #----------------------------------------------------#
@@ -37,10 +40,7 @@ def fit_one_epoch(G_model_train, D_model_train, G_model, D_model, loss_history, 
             D_real_loss             = BCE_loss(D_result, y_real)
             D_real_loss.backward()
 
-            noise                   = torch.randn((batch_size, 100))
-            if cuda:
-                noise               = noise.cuda(local_rank)
-            G_result                = G_model_train(noise)
+            G_result                = G_model_train(noise_1)
             D_result                = D_model_train(G_result)
             D_fake_loss             = BCE_loss(D_result, y_fake)
             D_fake_loss.backward()
@@ -51,52 +51,47 @@ def fit_one_epoch(G_model_train, D_model_train, G_model, D_model, loss_history, 
             #   目的是让生成器生成的图像，被评价器认为是正确的
             #----------------------------------------------------#
             G_optimizer.zero_grad()
-            noise                   = torch.randn((batch_size, 100))
-            if cuda:
-                noise               = noise.cuda(local_rank)
-            G_result                = G_model_train(noise)
+            G_result                = G_model_train(noise_2)
             D_result                = D_model_train(G_result).squeeze()
             G_train_loss            = BCE_loss(D_result, y_real)
             G_train_loss.backward()
             G_optimizer.step()
+
         else:
             from torch.cuda.amp import autocast
 
+            #----------------------------------------------------#
+            #   先训练评价器
+            #   利用真假图片训练评价器
+            #   目的是让评价器更准确
+            #----------------------------------------------------#
             with autocast():
-                #----------------------------------------------------#
-                #   先训练评价器
-                #   利用真假图片训练评价器
-                #   目的是让评价器更准确
-                #----------------------------------------------------#
                 D_optimizer.zero_grad()
                 D_result                = D_model_train(images)
                 D_real_loss             = BCE_loss(D_result, y_real)
-
-                noise                   = torch.randn((batch_size, 100))
-                if cuda:
-                    noise               = noise.cuda(local_rank)
-                G_result                = G_model_train(noise)
-                D_result                = D_model_train(G_result)
-                D_fake_loss             = BCE_loss(D_result, y_fake)
-                
-                D_loss = (D_real_loss + D_fake_loss) * 0.5
             #----------------------#
             #   反向传播
             #----------------------#
-            scaler.scale(D_loss).backward()
+            scaler.scale(D_real_loss).backward()
+
+            with autocast():
+                G_result                = G_model_train(noise_1)
+                D_result                = D_model_train(G_result)
+                D_fake_loss             = BCE_loss(D_result, y_fake)
+            #----------------------#
+            #   反向传播
+            #----------------------#
+            scaler.scale(D_fake_loss).backward()
             scaler.step(D_optimizer)
             scaler.update()
 
+            #----------------------------------------------------#
+            #   再训练生成器
+            #   目的是让生成器生成的图像，被评价器认为是正确的
+            #----------------------------------------------------#
             with autocast():
-                #----------------------------------------------------#
-                #   再训练生成器
-                #   目的是让生成器生成的图像，被评价器认为是正确的
-                #----------------------------------------------------#
                 G_optimizer.zero_grad()
-                noise                   = torch.randn((batch_size, 100))
-                if cuda:
-                    noise               = noise.cuda(local_rank)
-                G_result                = G_model_train(noise)
+                G_result                = G_model_train(noise_2)
                 D_result                = D_model_train(G_result).squeeze()
                 G_train_loss            = BCE_loss(D_result, y_real)
             #----------------------#
@@ -116,7 +111,7 @@ def fit_one_epoch(G_model_train, D_model_train, G_model, D_model, loss_history, 
             pbar.update(1)
 
             if iteration % photo_save_step == 0:
-                show_result(epoch + 1, G_model_train, cuda, local_rank)
+                show_result(epoch + 1, G_model, cuda, local_rank)
 
     G_total_loss = G_total_loss / epoch_step
     D_total_loss = D_total_loss / epoch_step
