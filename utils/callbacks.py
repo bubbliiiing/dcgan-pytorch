@@ -12,7 +12,8 @@ class LossHistory():
     def __init__(self, log_dir, model, input_shape):
         self.log_dir    = log_dir
         
-        os.makedirs(self.log_dir)
+        if not os.path.exists(self.log_dir):
+            os.makedirs(self.log_dir)
         self.writer     = SummaryWriter(self.log_dir)
         try:
             for m in model:
