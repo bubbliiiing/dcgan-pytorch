@@ -37,7 +37,7 @@ def show_result(num_epoch, G_net, cuda, local_rank):
     with torch.no_grad():
         randn_in = torch.randn((5 * 5, 100))
         if cuda:
-            randn_in.cuda(local_rank)
+            randn_in = randn_in.cuda(local_rank)
             
         G_net.eval()
         test_images = G_net(randn_in)
