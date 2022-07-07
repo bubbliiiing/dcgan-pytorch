@@ -128,7 +128,7 @@ def fit_one_epoch(G_model_train, D_model_train, G_model, D_model, loss_history, 
         loss_history.append_loss(epoch + 1, G_total_loss = G_total_loss, D_total_loss = D_total_loss)
 
         #----------------------------#
-        #   每10个时代保存一次
+        #   每若干个世代保存一次
         #----------------------------#
         if (epoch + 1) % save_period == 0 or epoch + 1 == Epoch:
             torch.save(G_model.state_dict(), 'logs/G_Epoch%d-GLoss%.4f-DLoss%.4f.pth'%(epoch + 1, G_total_loss, D_total_loss))
